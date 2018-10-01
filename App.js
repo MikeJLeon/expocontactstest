@@ -8,18 +8,16 @@ export default class App extends React.Component {
     this.state = {
       dataContacts:[]
     };
-    //Get phone contacts
-    this.getContacts();
   }
-  async getContacts(){
+
+  async componentDidMount() {
     const permission = await Permissions.askAsync(Permissions.CONTACTS);
     //Check permission status
     if (permission.status !== 'granted') {
       return;
-    }else{
+    } else {
       //Passed permission check
-      console.log("We got in!")
-      //Expo grab contacts by phone numbers
+      console.log("We got in!");
       const data = await Contacts.getContactsAsync({
         fields: [
           Contacts.PHONE_NUMBERS,
@@ -28,30 +26,36 @@ export default class App extends React.Component {
           Contacts.URI
         ]
       });
-      //Print contacts total
-      console.log(data.total);
+
       //Check if at least 1 contact is available
       if (data.total > 0) {
         //Grab contact name
         const contact = data.data[0].name;
         //Print contact name in log
-        console.log(data);
-        console.log(data.data[0].phoneNumbers);
-        console.log(data.data[0].phoneNumbers[0].number)
+        console.log(data.data);
+        //console.log(data.data[0]);
+        //console.log( data.data[3] );
         this.setState({dataContacts: data.data});
-        
       }
     }
-  }
+  }  
+
   render() {
+
+    const _renderItem = ({item}) => {
+      if(item.phoneNumbers){
+         return <Text> {item.name} {item.phoneNumbers[0].number} </Text>
+       }else{
+          return <Text> {item.name} No phone number!</Text> 
+       }
+    }
     return (
       <View style={styles.container}>
         <Text>First line</Text>
         <FlatList
           data={this.state.dataContacts}
-          renderItem={({item}) => 
-            <Text>{item.name}, {item.phoneNumbers[0].number}</Text>
-          }
+          renderItem={_renderItem}
+          keyExtractor={item => item.id}
         />
       </View>
     );
