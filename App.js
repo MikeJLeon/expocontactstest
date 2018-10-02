@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, SectionList, StyleSheet, Text, View, Image, FlatList} from 'react-native';
 import { Contacts, Permissions } from 'expo';
+import _ from 'lodash';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -30,20 +31,35 @@ export default class App extends React.Component {
       //Print contacts total
       //console.log(data.total);
       //Check if at least 1 contact is available
-      const sections = {};
+      const sections = [];
       if (data.total > 0) {
         //Grab contact name
         //Print contact name in log
-        for (var prop in data.data) {
-          var name = (data.data[prop].name);
-          var fL = name.charAt(0);          
-          if(!(fL in sections)){
-            sections[fL] = new Array();
-            sections[fL].push(name);
+        for (let prop in data.data) {
+          let name = (data.data[prop].name);
+          let fL = name.charAt(0);
+          let image;
+          if(data.data[prop].imageAvailable){
+            image = data.data[prop].image.uri;
           }else{
-            sections[fL].push(name); 
+            image = "https://s3.eu-west-2.amazonaws.com/soundwise/uploads/user-profile/default.png";
+          }
+          if(!(fL in sections)){
+            sections.push({name: name, image: image, letter: fL});
+          }else{
+            sections.push({name: name, image: image, letter: fL});
           }
         }
+        console.log(sections);
+        sections = _.groupBy(sections, d => d.letter);
+        sections = _.reduce(sections, (acc, next, index) => {
+          acc.push({
+            key:index,
+            data:next
+          })
+        console.log(sections);
+          return acc
+        }, [])
         this.setState({dataSections: sections})
         this.setState({dataContacts: data.data});
       }
@@ -51,16 +67,21 @@ export default class App extends React.Component {
   }  
 
   render() {
-    const _renderItem = ({item, section}) => (<Text>{`${item.name}(${section.key})`}</Text>)
-
-    const _renderSectionHeader = ({section}) => {
-        return (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.header}>{section.key}</Text>
-          </View>
-        )
+    renderItem = (item) => {
+      return (
+        <View style={styles.contacts}>
+          <Image style={styles.image} source={{uri: item.item.image}}/>
+          <Text style={styles.name}>{item.item.name}</Text>
+          <TouchableOpacity style={styles.button}>
+          </TouchableOpacity>
+        </View>
+      );
     }
-  /*   const _renderItem = ({item}) => {
+
+    renderSectionHeader = (headerItem) => {
+      return <Text style={styles.sections}>{headerItem.section.key}</Text>;
+    }
+/*       const _renderItem = ({item}) => {
       if(!item.imageAvailable){
          return (
             <View style={styles.contacts}>
@@ -80,7 +101,7 @@ export default class App extends React.Component {
           </View>
         )
       }
-    } */
+    }  */
     return (
       <View style={styles.container}>
         <Text>First line</Text>
@@ -90,9 +111,10 @@ export default class App extends React.Component {
           keyExtractor={item => item.id}
         /> */}
         <SectionList
-            sections={this.state.dataSections}
-            renderItem={_renderItem}
-            renderSectionHeader={_renderSectionHeader}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+          sections={this.state.dataSections}
+          keyExtractor={(item) => item.name}
         />
       </View>
     );
@@ -102,6 +124,9 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
+  },
+  sections:{
+    backgroundColor:"yellow",
   },
   contacts:{
     flex:1, 
